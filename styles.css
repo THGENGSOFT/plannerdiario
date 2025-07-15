@@ -1,0 +1,115 @@
+/* Reset básico e box-sizing */
+*, *::before, *::after {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+}
+
+/* Tipografia e cores padrão */
+html, body {
+min-height: 100vh;
+font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.42857143;
+color: #000;
+background-color: #f56601c7;
+}
+
+/* Layout geral */
+body {
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 1rem;
+}
+
+/* Estilo para título, data, inputs e botão */
+body > h1,
+body > p#dataAtual,
+body > label,
+body > button {
+max-width: 800px;
+width: 100%;
+background: #fafafa;
+padding: 1rem 1.5rem;
+border-radius: 8px;
+box-shadow: 0 2px 8px #000;
+margin-top: 1rem;
+text-align: center;
+}
+
+/* Inputs e labels */
+label {
+display: block;
+font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"] {
+width: 100%;
+padding: 0.5rem;
+margin-top: 0.5rem;
+border: 1px solid #ccc;
+border-radius: 4px;
+font-size: 1rem;
+}
+
+/* Botão */
+button {
+cursor: pointer;
+font-size: 1rem;
+border: none;
+background-color: #f56601c7;
+color: #000;
+transition: background-color 0.3s;
+}
+
+button:hover {
+background-color: #f56601c7;
+}
+
+/* Container de planejamento */
+#planejamento {
+max-width: 800px;
+width: 100%;
+background: #fafafa;
+padding: 1.5rem;
+border-radius: 8px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+margin-top: 1rem;
+}
+
+/* Links */
+#planejamento p a,
+#planejamento div > p a {
+color: #f56601;
+text-decoration: none;
+margin-right: 0.5rem;
+transition: color 0.3s;
+}
+
+#planejamento p a:hover,
+#planejamento div > p a:hover {
+color: #000;
+text-decoration: underline;
+}
+
+/* Listas e títulos dentro de #planejamento */
+#planejamento h2,
+#planejamento h3 {
+margin-bottom: 0.75rem;
+font-weight: 600;
+color: #222;
+text-align: center;
+}
+
+#planejamento ul {
+margin-bottom: 1rem;
+padding-left: 1.5rem;
+}
+
+/* Indicadores */
+.indicador {
+margin-bottom: 1rem;
+}
+
