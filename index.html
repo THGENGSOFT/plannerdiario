@@ -1,193 +1,299 @@
 <!DOCTYPE html5>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Planner Diário</title>
-  <!-- SheetJS para geração de Excel -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <h1>Planner Diário</h1>
-  <p id="dataAtual"></p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Planner Diário</title>
+    <!-- SheetJS para geração de Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <h1>Planner Diário</h1>
+    <p id="dataAtual"></p>
 
-  <label>
-    Nome:
-    <input type="text" id="inputNome" placeholder="Digite seu nome" />
-  </label>
-  <label>
-    Loja/Unidade:
-    <input type="text" id="inputLoja" placeholder="Digite o nome da loja" />
-  </label>
-  <button id="btnGerar">Iniciar Planejamento</button>
+    <label>
+      Nome:
+      <input type="text" id="inputNome" placeholder="Digite seu nome" />
+    </label>
+    <label>
+      Loja/Unidade:
+      <input type="text" id="inputLoja" placeholder="Digite o nome da loja" />
+    </label>
+    <button id="btnGerar">Iniciar Planejamento</button>
 
-  <div id="planejamento" style="display:none;"></div>
+    <div id="planejamento" style="display:none;"></div>
 
-  <script>
-    // Configuração de locale para português
-    const formatoPortugues = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+    <script>
+      // Configuração de locale para português
+      const formatoPortugues = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
 
-    function obterData() {
-      const hoje = new Date();
-      const partes = new Intl.DateTimeFormat('pt-BR', formatoPortugues).formatToParts(hoje);
-      const diaSemana = partes.find(p => p.type === 'weekday').value;
-      const dia = partes.find(p => p.type === 'day').value;
-      const mes = partes.find(p => p.type === 'month').value;
-      const ano = partes.find(p => p.type === 'year').value;
-      return `${diaSemana.charAt(0).toUpperCase()}${diaSemana.slice(1)}, ${dia}/${mes}/${ano}`;
-    }
+      function obterData() {
+        const hoje = new Date();
+        const partes = new Intl.DateTimeFormat('pt-BR', formatoPortugues).formatToParts(hoje);
+        const diaSemana = partes.find(p => p.type === 'weekday').value;
+        const dia = partes.find(p => p.type === 'day').value;
+        const mes = partes.find(p => p.type === 'month').value;
+        const ano = partes.find(p => p.type === 'year').value;
+        return `${diaSemana.charAt(0).toUpperCase()}${diaSemana.slice(1)}, ${dia}/${mes}/${ano}`;
+      }
 
-    // Exporta dados para Excel
-    function exportarParaExcel(dados, nomeLoja) {
-      const hoje = new Date().toISOString().slice(0,10);
-      const header = [[ nomeLoja.toUpperCase(), hoje ]];
-      const rows = Object.entries(dados).map(([k,v]) => [k, v]);
-      const ws = XLSX.utils.aoa_to_sheet([ ...header, ...rows ]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-      XLSX.writeFile(wb, `DIARIO_${nomeLoja.toUpperCase()}_${hoje}.xlsx`);
-    }
+      // Exporta dados para Excel
+      function exportarParaExcel(dados, nomeLoja) {
+        const hoje = new Date().toISOString().slice(0,10);
+        const header = [[ nomeLoja.toUpperCase(), hoje ]];
+        const rows = Object.entries(dados).map(([k,v]) => [k, v]);
+        const ws = XLSX.utils.aoa_to_sheet([ ...header, ...rows ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+        XLSX.writeFile(wb, `DIARIO_${nomeLoja.toUpperCase()}_${hoje}.xlsx`);
+      }
 
-    // Gera formulário de indicadores e adiciona botão de exportação
-    function coletarDadosOperacionais(nomeLoja) {
-      const percentuais = [
-        "NPS", "Improdutivo", "Abertura Tablet",
-        "Encerramento Tablet", "% Recuperação de Avarias",
-        "Ocupação do Dia", "Ocupação Acumulada"
-      ];
-      const inteiros = [ "Reservas do Dia", "Devoluções do Dia" ];
-      const titulos = [ ...percentuais, ...inteiros ];
+      // Gera formulário de indicadores e adiciona botão de exportação
+      function coletarDadosOperacionais(nomeLoja) {
+        const percentuais = [
+          "NPS", "Improdutivo", "Abertura Tablet",
+          "Encerramento Tablet", "% Recuperação de Avarias",
+          "Ocupação do Dia", "Ocupação Acumulada"
+        ];
+        const inteiros = [ "Reservas do Dia", "Devoluções do Dia" ];
+        const titulos = [ ...percentuais, ...inteiros ];
 
-      const container = document.getElementById('formIndicadores');
-      container.innerHTML = '<h3>📊 Coleta de Indicadores</h3>';
+        const container = document.getElementById('formIndicadores');
+        container.innerHTML = '<h3>📊 Coleta de Indicadores</h3>';
 
-      titulos.forEach(t => {
-        const safe = t.replace(/[^a-zA-Z0-9]/g, '_');
-        const placeholder = percentuais.includes(t) ? 'Ex: 12.34' : 'Ex: 123';
-        const div = document.createElement('div');
-        div.innerHTML = `<label>${t}: <input type="number" id="inp_${safe}" placeholder="${placeholder}" step="any"/></label>`;
-        container.appendChild(div);
-      });
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = 'Exportar para Excel';
-      btn.onclick = () => {
-        const dados = {};
         titulos.forEach(t => {
           const safe = t.replace(/[^a-zA-Z0-9]/g, '_');
-          let v = parseFloat(document.getElementById(`inp_${safe}`).value) || 0;
-          if (percentuais.includes(t)) dados[t] = v.toFixed(2).replace('.', ',') + '%';
-          else dados[t] = parseInt(v, 10);
+          const placeholder = percentuais.includes(t) ? 'Ex: 12.34' : 'Ex: 123';
+          const div = document.createElement('div');
+          div.innerHTML = `<label>${t}: <input type="number" id="inp_${safe}" placeholder="${placeholder}" step="any"/></label>`;
+          container.appendChild(div);
         });
-        exportarParaExcel(dados, nomeLoja);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Exportar para Excel';
+        btn.onclick = () => {
+          const dados = {};
+          titulos.forEach(t => {
+            const safe = t.replace(/[^a-zA-Z0-9]/g, '_');
+            let v = parseFloat(document.getElementById(`inp_${safe}`).value) || 0;
+            if (percentuais.includes(t)) dados[t] = v.toFixed(2).replace('.', ',') + '%';
+            else dados[t] = parseInt(v, 10);
+          });
+          exportarParaExcel(dados, nomeLoja);
+        };
+        container.appendChild(btn);
+      }
+
+      // Função principal de planejamento
+      function gerarPlanejamento() {
+        const nome = document.getElementById('inputNome').value.trim();
+        const loja = document.getElementById('inputLoja').value.trim();
+        if (!nome || !loja) { alert('Por favor, preencha nome e loja.'); return; }
+
+        document.getElementById('dataAtual').textContent = obterData();
+        const plano = document.getElementById('planejamento');
+        plano.style.display = 'block';
+
+        plano.innerHTML = `
+          <h2>👤 Gestor ${nome} | 🏢 RAC ${loja}</h2>
+          <br/>
+          <h3>🕗 Bom dia!</h3>
+          <ul>
+            <li>Acompanhar NextManager</li>
+            <li>Conferir Calendários e Lembretes</li>
+            <li>Conferir agendamentos de CPA, Web-checkin e Veículos Reservados</li>
+            <li>Liberar lavagens e abastecimentos</li>
+            <li>Verificar Previsão de Ocupação por Loja e grupos especiais</li>
+            <li>Conferir limpeza da loja, mobilários, marketing, self-pickup e organização do pátio</li>
+            <li>Conferir limpeza e condições das transfers</li>
+            <li>Aprovar SAP - Despesas/RH</li>
+            <li>Conferir e enviar indicadores do dia</li>
+            <li>Conferir e-mail e mensagens</li>
+          </ul>
+          <p>
+            <a href="https://manager.nextqs.com/login.html" target="_blank">NextManager</a> |
+            <a href="https://vetorzkm.movida.com.br/login.php" target="_blank">Vetor</a> |
+            <a href="https://app.powerbi.com/home?experience=power-bi" target="_blank">Power BI</a> |
+            <a href="https://outlook.office365.com/mail/inbox" target="_blank">E-mail</a> |
+            <a href="https://www.notion.so/" target="_blank">Notion</a> |
+            <a href="https://www.icloud.com/" target="_blank">iCloud</a> |
+            <a href="https://drive.google.com/drive/home" target="_blank">Google Drive</a> |
+            <a href="https://thgengsoft.github.io/calculadoraestacionamento/" target="_blank">Estacionamento</a>
+          </p>
+          <br/>
+          <div id="formIndicadores"></div>
+          <div>
+            <br/>
+            <h3>🚗 Acompanhamento da Frota</h3>
+            <ul>
+              <li>Verificar veículos sem movimentação há mais de 3 dias</li>
+              <li>Cobrar retorno dos veículos em status Improdutivos/Não Operacional</li>
+              <li>Conferir manutenção em geral, limpeza, luzes de alertas e comunicação visual (chaveiros, lixeiras, porta documentos e adesivos)</li>
+              <li>Direcionar veículos com manutenção pendente</li>
+            </ul>
+            <p>
+              <a href="https://sistemas.infornet.com.br/webassist/movida/index.php" target="_blank">Web Assist</a> |
+              <a href="https://geo.satrastreamento.com.br/" target="_blank">Geo</a>
+            </p>
+          </div>
+          <br/>
+          <div>
+            <h3>🫂 Gestão de Gente</h3>
+            <ul>
+              <li>Aniversariantes do dia</li>
+              <li>Conferir Escalas e Intervalos</li>
+              <li>Alinhar com a equipe sobre objetivos diários</li>
+              <li>Reforçar a importância do NPS e produtividade</li>
+              <li>Realizar feedbacks</li>
+              <li>Reforçar a importância do uso dos uniformes, crachás e EPIs</li>
+              <li>Reforçar a importância do uso do tablet</li>
+            </ul>
+            <p>
+              <a href="https://colaborador.simpar.com.br/irj/portal" target="_blank">Portal do Colaborador</a> |
+              <a href="https://jornadas.escala.app/login" target="_blank">Jornada Escalas</a> |
+              <a href="https://peexbrasil.com.br/gruposimpar/" target="_blank">Ciclo de Gente</a>
+            </p>
+          </div>
+          <br/>
+          <div>
+            <h3>📅 Planejamento do Dia Seguinte</h3>
+            <ul>
+              <li>Definir prioridades para o dia seguinte</li>
+            </ul>
+            <p>
+            </p>
+            <h3>📆 Agenda Semanal</h3>
+<table class="agenda-table">
+  <thead>
+    <tr>
+      <th>Tarefa</th>
+      <th>Segunda</th>
+      <th>Terça</th>
+      <th>Quarta</th>
+      <th>Quinta</th>
+      <th>Sexta</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Universidade Movida</td>
+      <td><span class="tag monday">Segunda</span></td>
+      <td></td><td></td><td></td><td></td>
+    </tr>
+    <tr>
+      <td>Multas</td>
+      <td></td>
+      <td><span class="tag tuesday">Terça</span></td>
+      <td></td><td></td><td></td>
+    </tr>
+    <tr>
+      <td>Avarias</td>
+      <td></td>
+      <td><span class="tag tuesday">Terça</span></td>
+      <td></td>
+      <td></td>
+      <td><span class="tag friday">Sexta</span></td>
+    </tr>
+    <tr>
+  <td>Boletos</td>
+  <td></td>
+  <td><span class="tag tuesday">Terça</span></td>
+  <td></td>
+  <td></td>
+  <td><span class="tag friday">Sexta</span></td>
+    </tr>
+    <tr>
+      <td>Inventários</td>
+      <td></td><td></td>
+      <td><span class="tag wednesday">Quarta</span></td>
+      <td></td><td></td>
+    </tr>
+    <tr>
+      <td>Fotos MKT</td>
+      <td></td><td></td>
+      <td><span class="tag wednesday">Quarta</span></td>
+      <td></td><td></td>
+    </tr>
+    <tr>
+      <td>Vendas e Metas</td>
+      <td></td><td></td><td></td>
+      <td><span class="tag thursday">Quinta</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Veíc sem receita</td>
+      <td></td><td></td><td></td>
+      <td><span class="tag thursday">Quinta</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Espelho ponto</td>
+      <td></td><td></td><td></td><td></td>
+      <td><span class="tag friday">Sexta</span></td>
+    </tr>
+  </tbody>
+</table>
+            <h3>📅 Agenda Mensal</h3>
+<table class="agenda-table">
+  <thead>
+    <tr>
+      <th>Tarefa</th>
+      <th>Quando</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Agendamento Férias</td>
+      <td>Primeira semana</td>
+    </tr>
+    <tr>
+      <td>Feedback Desempenho</td>
+      <td>1× mês</td>
+    </tr>
+    <tr>
+      <td>Visita Fornecedores</td>
+      <td>Última semana</td>
+    </tr>
+    <tr>
+      <td>Reunião Resultados</td>
+      <td>Após recebimento dados</td>
+    </tr>
+  </tbody>
+</table>
+          </div>
+          <br/>
+          <div>
+            <h3>💡 Dicas</h3>
+            <ul>
+              <li>Comece o dia com café ☕</li>
+              <li>Mantenha o foco</li>
+              <li>Revisite indicadores do mês anterior</li>
+              <li>Comunicação é a chave</li>
+              <li>No jardim do futuro, o planejamento é a semente da realização. — Thiago Fagundes</li>
+            </ul>
+            <p>
+              <a href="https://www.movida.com.br/contrato/" target="_blank">Contrato Público</a> |
+              <a href="https://plataforma.ticketlog.com.br/" target="_blank">Ticket Log</a> |
+              <a href="https://simpar.docnix.com.br/docnix/corporate/index.html#/" target="_blank">Docnix</a> |
+              <a href="https://webantifraudes.b2egroup.com.br/Web/Usuario/Login?url=~/?" target="_blank">B2E</a> |
+              <a href="https://acesso.movidacloud.com.br/" target="_blank">Jira</a> |
+              <a href="https://simpar.atlassian.net/servicedesk/customer/user/login?destination=portals" target="_blank">Service Desk</a> |
+              <a href="https://portal.jsl.com.br/" target="_blank">Portal JSL</a> |
+              <a href="https://universidadesimpar.skore.io/login" target="_blank">Universidade Simpar</a>
+            </p>
+        `;
+
+        coletarDadosOperacionais(loja);
       };
-      container.appendChild(btn);
-    }
 
-    // Função principal de planejamento
-    function gerarPlanejamento() {
-      const nome = document.getElementById('inputNome').value.trim();
-      const loja = document.getElementById('inputLoja').value.trim();
-      if (!nome || !loja) { alert('Por favor, preencha nome e loja.'); return; }
-
+      // Inicialização
+      document.getElementById('btnGerar').addEventListener('click', gerarPlanejamento);
       document.getElementById('dataAtual').textContent = obterData();
-      const plano = document.getElementById('planejamento');
-      plano.style.display = 'block';
-
-      plano.innerHTML = `
-        <h2>👤 Gestor ${nome} | 🏢 RAC ${loja}</h2>
-        <br/>
-        <h3>🕗 Bom dia!</h3>
-        <ul>
-          <li>Acompanhar NextManager</li>
-          <li>Conferir Calendários e Lembretes</li>
-          <li>Conferir agendamentos de CPA</li>
-          <li>Liberar lavagens e abastecimentos</li>
-          <li>Verificar Previsão de Ocupação por Loja e grupos especiais</li>
-          <li>Conferir limpeza da loja, mobilários e marketing</li>
-          <li>Conferir limpeza das Vans</li>
-          <li>Conferir e enviar indicadores do dia</li>
-        </ul>
-        <p>
-          <a href="https://manager.nextqs.com/login.html" target="_blank">NextManager</a> |
-          <a href="https://vetorzkm.movida.com.br/login.php" target="_blank">Vetor</a> |
-          <a href="https://app.powerbi.com/home?experience=power-bi" target="_blank">Power BI</a> |
-          <a href="https://outlook.office365.com/mail/inbox" target="_blank">E-mail</a> |
-          <a href="https://www.notion.so/" target="_blank">Notion</a> |
-          <a href="https://plataforma.ticketlog.com.br/" target="_blank">Ticket Log</a> |
-          <a href="https://acesso.movidacloud.com.br/" target="_blank">JIRA</a> |
-          <a href="https://webantifraudes.b2egroup.com.br/Web/Usuario/Login?url=~/?" target="_blank">B2E</a> |
-          <a href="https://simpar.docnix.com.br/docnix/corporate/index.html#/" target="_blank">Docnix</a>
-        </p>
-        <br/>
-        <div id="formIndicadores"></div>
-        <div>
-        <br/>
-          <h3>🚗 Acompanhamento da Frota</h3>
-          <ul>
-            <li>Verificar veículos sem movimentação há mais de 3 dias</li>
-            <li>Cobrar retorno dos veículos em status Improdutivo/Manutenção/Não Operacional</li>
-            <li>Conferir manutenção em geral, limpeza, luzes de alertas e comunicação visual (chaveiros, lixeiras, porta documentos e adesivos)</li>
-            <li>Direcionar veículos com manutenção pendente</li>
-          </ul>
-          <p>
-            <a href="https://sistemas.infornet.com.br/webassist/movida/index.php" target="_blank">Web Assist</a> |
-            <a href="https://geo.satrastreamento.com.br/" target="_blank">Geo</a>
-          </p>
-        </div>
-        <br/>
-        <div>
-          <h3>🫂 Gestão de Gente</h3>
-          <ul>
-            <li>Conferir Escalas e Intervalos</li>
-            <li>Alinhar com a equipe sobre objetivos diários</li>
-            <li>Reforçar a importância do NPS e produtividade</li>
-            <li>Realizar feedbacks</li>
-            <li>Reforçar a importância do uso dos uniformes / EPIs</li>
-            <li>Reforçar a importância do uso do tablet</li>
-          </ul>
-          <p>
-            <a href="https://colaborador.simpar.com.br/irj/portal" target="_blank">Portal do Colaborador</a> |
-            <a href="https://jornadas.escala.app/login" target="_blank">Jornada Escalas</a> |
-            <a href="https://peexbrasil.com.br/gruposimpar/" target="_blank">Ciclo de Gente</a>
-          </p>
-        </div>
-        <br/>
-        <div>
-          <h3>📅 Planejamento do Dia Seguinte</h3>
-          <ul>
-            <li>Definir prioridades para o dia seguinte</li>
-          </ul>
-          <p>
-            <a href="https://universidadesimpar.skore.io/login" target="_blank">Universidade Simpar</a>
-          </p>
-        </div>
-        <br/>
-        <div>
-          <h3>💡 Dicas</h3>
-          <ul>
-            <li>Comece o dia com café ☕</li>
-            <li>Mantenha o foco</li>
-            <li>Revisite indicadores do mês anterior</li>
-            <li>Comunicação é a chave</li>
-          </ul>
-          <p>
-            <a href="https://www.movida.com.br/contrato/" target="_blank">Contrato Público</a>
-          </p>
-        </div>
-      `;
-
-      coletarDadosOperacionais(loja);
-    }
-
-    // Inicialização
-    document.getElementById('btnGerar').addEventListener('click', gerarPlanejamento);
-    document.getElementById('dataAtual').textContent = obterData();
-  </script>
-</body>
+    </script>
+  </body>
+  <footer style="text-align:center; font-size:0.5rem; margin-top:2rem;">
+    © 2025 <a href="https://thgengsoft.dev">THGENGSOFT</a>. Todos os direitos reservados.
+  </footer>
 </html>
-<footer style="text-align:center; font-size:0.5rem; margin-top:2rem;">
-  © 2025 <a href="https://thiagosilva.dev">Thiago Fagundes</a>. Todos os direitos reservados.
-</footer>
