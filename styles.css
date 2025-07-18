@@ -113,3 +113,30 @@ padding-left: 1.5rem;
 margin-bottom: 1rem;
 }
 
+.agenda-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+.agenda-table th,
+.agenda-table td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+.agenda-table th {
+  background-color: #f0f0f0;
+}
+.tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.8rem;
+}
+.tag.monday    { background-color: #a0522d; /* marrom */ }
+.tag.tuesday   { background-color: #2e8b57; /* verde */ }
+.tag.wednesday { background-color: #228b22; /* verde escuro */ }
+.tag.thursday  { background-color: #4682b4; /* azul */ }
+.tag.friday    { background-color: #555;    /* cinza-escuro */ }
