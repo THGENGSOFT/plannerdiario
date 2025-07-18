@@ -6,11 +6,12 @@
     <title>Planner Diário</title>
     <!-- SheetJS para geração de Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <h1>Planner Diário</h1>
     <p id="dataAtual"></p>
+    <p id="previsaoTempo">Carregando previsão...</p>
 
     <label>
       Nome:
@@ -28,6 +29,28 @@
       // Configuração de locale para português
       const formatoPortugues = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
 
+      // Busca previsão do tempo para Curitiba via endpoint /weather
+      async function fetchPrevisao() {
+        const apiKey = 'c93d19b97f6c14c9ca4713158c93eee9';
+        const lat = -25.4284, lon = -49.2733;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=pt_br&appid=${apiKey}`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          const max = json.main.temp_max.toFixed(0);
+          const min = json.main.temp_min.toFixed(0);
+          const chuva = json.weather[0].main.toLowerCase().includes('rain') ? 'Sim' : 'Não';
+          document.getElementById('previsaoTempo').textContent =
+            `🌡️ Mín: ${min}°C   Máx: ${max}°C   ☔ Chuva: ${chuva}`;
+        } catch (e) {
+          document.getElementById('previsaoTempo').textContent =
+            'Não foi possível carregar a previsão.';
+          console.error('Erro ao buscar previsão:', e);
+        }
+      }
+
+      // Obtém data formatada
       function obterData() {
         const hoje = new Date();
         const partes = new Intl.DateTimeFormat('pt-BR', formatoPortugues).formatToParts(hoje);
@@ -61,7 +84,6 @@
 
         const container = document.getElementById('formIndicadores');
         container.innerHTML = '<h3>📊 Coleta de Indicadores</h3>';
-
         titulos.forEach(t => {
           const safe = t.replace(/[^a-zA-Z0-9]/g, '_');
           const placeholder = percentuais.includes(t) ? 'Ex: 12.34' : 'Ex: 123';
@@ -69,7 +91,6 @@
           div.innerHTML = `<label>${t}: <input type="number" id="inp_${safe}" placeholder="${placeholder}" step="any"/></label>`;
           container.appendChild(div);
         });
-
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.textContent = 'Exportar para Excel';
@@ -91,11 +112,9 @@
         const nome = document.getElementById('inputNome').value.trim();
         const loja = document.getElementById('inputLoja').value.trim();
         if (!nome || !loja) { alert('Por favor, preencha nome e loja.'); return; }
-
         document.getElementById('dataAtual').textContent = obterData();
         const plano = document.getElementById('planejamento');
         plano.style.display = 'block';
-
         plano.innerHTML = `
           <h2>👤 Gestor ${nome} | 🏢 RAC ${loja}</h2>
           <br/>
@@ -162,106 +181,109 @@
             <ul>
               <li>Definir prioridades para o dia seguinte</li>
             </ul>
-            <p>
-            </p>
+          </div>
+          <br/>
+          <div>
             <h3>📆 Agenda Semanal</h3>
-<table class="agenda-table">
-  <thead>
-    <tr>
-      <th>Tarefa</th>
-      <th>Segunda</th>
-      <th>Terça</th>
-      <th>Quarta</th>
-      <th>Quinta</th>
-      <th>Sexta</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Universidade Movida</td>
-      <td><span class="tag monday">Segunda</span></td>
-      <td></td><td></td><td></td><td></td>
-    </tr>
-    <tr>
-      <td>Multas</td>
-      <td></td>
-      <td><span class="tag tuesday">Terça</span></td>
-      <td></td><td></td><td></td>
-    </tr>
-    <tr>
-      <td>Avarias</td>
-      <td></td>
-      <td><span class="tag tuesday">Terça</span></td>
-      <td></td>
-      <td></td>
-      <td><span class="tag friday">Sexta</span></td>
-    </tr>
-    <tr>
-  <td>Boletos</td>
-  <td></td>
-  <td><span class="tag tuesday">Terça</span></td>
-  <td></td>
-  <td></td>
-  <td><span class="tag friday">Sexta</span></td>
-    </tr>
-    <tr>
-      <td>Inventários</td>
-      <td></td><td></td>
-      <td><span class="tag wednesday">Quarta</span></td>
-      <td></td><td></td>
-    </tr>
-    <tr>
-      <td>Fotos MKT</td>
-      <td></td><td></td>
-      <td><span class="tag wednesday">Quarta</span></td>
-      <td></td><td></td>
-    </tr>
-    <tr>
-      <td>Vendas e Metas</td>
-      <td></td><td></td><td></td>
-      <td><span class="tag thursday">Quinta</span></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Veíc sem receita</td>
-      <td></td><td></td><td></td>
-      <td><span class="tag thursday">Quinta</span></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>Espelho ponto</td>
-      <td></td><td></td><td></td><td></td>
-      <td><span class="tag friday">Sexta</span></td>
-    </tr>
-  </tbody>
-</table>
+            <table class="agenda-table">
+              <thead>
+                <tr>
+                  <th>Tarefa</th>
+                  <th>Segunda</th>
+                  <th>Terça</th>
+                  <th>Quarta</th>
+                  <th>Quinta</th>
+                  <th>Sexta</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Universidade Movida</td>
+                  <td><span class="tag monday">Segunda</span></td>
+                  <td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td>Multas</td>
+                  <td></td>
+                  <td><span class="tag tuesday">Terça</span></td>
+                  <td></td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td>Avarias</td>
+                  <td></td>
+                  <td><span class="tag tuesday">Terça</span></td>
+                  <td></td><td></td>
+                  <td><span class="tag friday">Sexta</span></td>
+                </tr>
+                <tr>
+                  <td>Boletos</td>
+                  <td></td>
+                  <td><span class="tag tuesday">Terça</span></td>
+                  <td></td>
+                  <td></td>
+                  <td><span class="tag friday">Sexta</span></td>
+                </tr>
+                <tr>
+                  <td>Inventários</td>
+                  <td></td><td></td>
+                  <td><span class="tag wednesday">Quarta</span></td>
+                  <td></td><td></td>
+                </tr>
+                <tr>
+                  <td>Fotos MKT</td>
+                  <td></td><td></td>
+                  <td><span class="tag wednesday">Quarta</span></td>
+                  <td></td><td></td>
+                </tr>
+                <tr>
+                  <td>Vendas e Metas</td>
+                  <td></td><td></td><td></td>
+                  <td><span class="tag thursday">Quinta</span></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td>Veíc sem receita</td>
+                  <td></td><td></td><td></td>
+                  <td><span class="tag thursday">Quinta</span></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td>Espelho ponto</td>
+                  <td></td><td></td><td></td><td></td>
+                  <td><span class="tag friday">Sexta</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <br/>
+          <div>
             <h3>📅 Agenda Mensal</h3>
-<table class="agenda-table">
-  <thead>
-    <tr>
-      <th>Tarefa</th>
-      <th>Quando</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Agendamento Férias</td>
-      <td>Primeira semana</td>
-    </tr>
-    <tr>
-      <td>Feedback Desempenho</td>
-      <td>1× mês</td>
-    </tr>
-    <tr>
-      <td>Visita Fornecedores</td>
-      <td>Última semana</td>
-    </tr>
-    <tr>
-      <td>Reunião Resultados</td>
-      <td>Após recebimento dados</td>
-    </tr>
-  </tbody>
-</table>
+            <table class="agenda-table">
+              <thead>
+                <tr>
+                  <th>Tarefa</th>
+                  <th>Quando</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Agendamento Férias</td>
+                  <td>Primeira semana</td>
+                </tr>
+                <tr>
+                  <td>Feedback Desempenho</td>
+                  <td>1× mês</td>
+                </tr>
+                <tr>
+                  <td>Visita Fornecedores</td>
+                  <td>Última semana</td>
+                </tr>
+                <tr>
+                  <td>Reunião Resultados</td>
+                  <td>Após recebimento dados</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           <br/>
           <div>
@@ -271,7 +293,7 @@
               <li>Mantenha o foco</li>
               <li>Revisite indicadores do mês anterior</li>
               <li>Comunicação é a chave</li>
-              <li>No jardim do futuro, o planejamento é a semente da realização. — Thiago Fagundes</li>
+              <li>No jardim do futuro, o planejamento é a semente da realização. — Thiago Fagundes</li>
             </ul>
             <p>
               <a href="https://www.movida.com.br/contrato/" target="_blank">Contrato Público</a> |
@@ -283,17 +305,20 @@
               <a href="https://portal.jsl.com.br/" target="_blank">Portal JSL</a> |
               <a href="https://universidadesimpar.skore.io/login" target="_blank">Universidade Simpar</a>
             </p>
+          </div>
         `;
 
         coletarDadosOperacionais(loja);
-      };
+      }
 
       // Inicialização
       document.getElementById('btnGerar').addEventListener('click', gerarPlanejamento);
       document.getElementById('dataAtual').textContent = obterData();
+      fetchPrevisao();
     </script>
+
+    <footer style="text-align:center; font-size:0.5rem; margin-top:2rem;">
+      © 2025 <a href="https://thgengsoft.dev">THGENGSOFT</a>. Todos os direitos reservados.
+    </footer>
   </body>
-  <footer style="text-align:center; font-size:0.5rem; margin-top:2rem;">
-    © 2025 <a href="https://thgengsoft.dev">THGENGSOFT</a>. Todos os direitos reservados.
-  </footer>
 </html>
