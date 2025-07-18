@@ -29,18 +29,20 @@
       // Configuração de locale para português
       const formatoPortugues = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
 
-      // Busca previsão do tempo para Curitiba via endpoint /weather
+            // Busca previsão do tempo para Curitiba via Open-Meteo (sem API Key)
       async function fetchPrevisao() {
-        const apiKey = 'c93d19b97f6c14c9ca4713158c93eee9';
-        const lat = -25.4284, lon = -49.2733;
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=pt_br&appid=${apiKey}`;
+        const url =
+          "https://api.open-meteo.com/v1/forecast?latitude=-25.4284&longitude=-49.2733" +
+          "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+          "&timezone=America/Sao_Paulo";
         try {
           const res = await fetch(url);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const json = await res.json();
-          const max = json.main.temp_max.toFixed(0);
-          const min = json.main.temp_min.toFixed(0);
-          const chuva = json.weather[0].main.toLowerCase().includes('rain') ? 'Sim' : 'Não';
+          const max = json.daily.temperature_2m_max[0].toFixed(0);
+          const min = json.daily.temperature_2m_min[0].toFixed(0);
+          const chuvaProb = json.daily.precipitation_probability_max[0];
+          const chuva = chuvaProb >= 50 ? 'Sim' : 'Não';
           document.getElementById('previsaoTempo').textContent =
             `🌡️ Mín: ${min}°C   Máx: ${max}°C   ☔ Chuva: ${chuva}`;
         } catch (e) {
@@ -50,69 +52,10 @@
         }
       }
 
-      // Obtém data formatada
-      function obterData() {
-        const hoje = new Date();
-        const partes = new Intl.DateTimeFormat('pt-BR', formatoPortugues).formatToParts(hoje);
-        const diaSemana = partes.find(p => p.type === 'weekday').value;
-        const dia = partes.find(p => p.type === 'day').value;
-        const mes = partes.find(p => p.type === 'month').value;
-        const ano = partes.find(p => p.type === 'year').value;
-        return `${diaSemana.charAt(0).toUpperCase()}${diaSemana.slice(1)}, ${dia}/${mes}/${ano}`;
-      }
+      // Inicialização de data e tempo
+      document.getElementById('dataAtual').textContent = obterData();
+      fetchPrevisao();
 
-      // Exporta dados para Excel
-      function exportarParaExcel(dados, nomeLoja) {
-        const hoje = new Date().toISOString().slice(0,10);
-        const header = [[ nomeLoja.toUpperCase(), hoje ]];
-        const rows = Object.entries(dados).map(([k,v]) => [k, v]);
-        const ws = XLSX.utils.aoa_to_sheet([ ...header, ...rows ]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-        XLSX.writeFile(wb, `DIARIO_${nomeLoja.toUpperCase()}_${hoje}.xlsx`);
-      }
-
-      // Gera formulário de indicadores e adiciona botão de exportação
-      function coletarDadosOperacionais(nomeLoja) {
-        const percentuais = [
-          "NPS", "Improdutivo", "Abertura Tablet",
-          "Encerramento Tablet", "% Recuperação de Avarias",
-          "Ocupação do Dia", "Ocupação Acumulada"
-        ];
-        const inteiros = [ "Reservas do Dia", "Devoluções do Dia" ];
-        const titulos = [ ...percentuais, ...inteiros ];
-
-        const container = document.getElementById('formIndicadores');
-        container.innerHTML = '<h3>📊 Coleta de Indicadores</h3>';
-        titulos.forEach(t => {
-          const safe = t.replace(/[^a-zA-Z0-9]/g, '_');
-          const placeholder = percentuais.includes(t) ? 'Ex: 12.34' : 'Ex: 123';
-          const div = document.createElement('div');
-          div.innerHTML = `<label>${t}: <input type="number" id="inp_${safe}" placeholder="${placeholder}" step="any"/></label>`;
-          container.appendChild(div);
-        });
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = 'Exportar para Excel';
-        btn.onclick = () => {
-          const dados = {};
-          titulos.forEach(t => {
-            const safe = t.replace(/[^a-zA-Z0-9]/g, '_');
-            let v = parseFloat(document.getElementById(`inp_${safe}`).value) || 0;
-            if (percentuais.includes(t)) dados[t] = v.toFixed(2).replace('.', ',') + '%';
-            else dados[t] = parseInt(v, 10);
-          });
-          exportarParaExcel(dados, nomeLoja);
-        };
-        container.appendChild(btn);
-      }
-
-      // Função principal de planejamento
-      function gerarPlanejamento() {
-        const nome = document.getElementById('inputNome').value.trim();
-        const loja = document.getElementById('inputLoja').value.trim();
-        if (!nome || !loja) { alert('Por favor, preencha nome e loja.'); return; }
-        document.getElementById('dataAtual').textContent = obterData();
         const plano = document.getElementById('planejamento');
         plano.style.display = 'block';
         plano.innerHTML = `
