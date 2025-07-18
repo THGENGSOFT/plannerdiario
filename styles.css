@@ -28,7 +28,7 @@ body > h1,
 body > p#dataAtual,
 body > label,
 body > button {
-max-width: 800px;
+max-width: 700px;
 width: 100%;
 background: #fafafa;
 padding: 1rem 1.5rem;
@@ -70,7 +70,7 @@ background-color: #f56601c7;
 
 /* Container de planejamento */
 #planejamento {
-max-width: 800px;
+max-width: 900px;
 width: 100%;
 background: #fafafa;
 padding: 1.5rem;
